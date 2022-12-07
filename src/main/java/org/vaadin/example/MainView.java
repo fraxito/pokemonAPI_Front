@@ -1,6 +1,7 @@
 package org.vaadin.example;
 
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -40,31 +41,51 @@ public class MainView extends VerticalLayout {
      *            bean.
      */
     public MainView(@Autowired PokemonService service) {
-        HorizontalLayout inputs = new HorizontalLayout();
-        VerticalLayout results = new VerticalLayout();
-        ComboBox<String> comboBox = new ComboBox<>("Browser");
-        comboBox.setAllowCustomValue(false); //este deja que el usuario escriba lo que quiera en la caja del comboBox. Si se pone a false no deja
-        comboBox.setItems("people", "planets", "starships");
-        comboBox.setHelperText("Selecciona el tipo de petición");
+            HorizontalLayout inputs = new HorizontalLayout();
+            VerticalLayout results = new VerticalLayout();
+            ComboBox<String> comboBox = new ComboBox<>("Selecciona uno...");
+            comboBox.setAllowCustomValue(false); //este deja que el usuario escriba lo que quiera en la caja del comboBox. Si se pone a false no deja
+            comboBox.setItems("Todos los pokemons", "Por Nombre", "Por tipo");
+            comboBox.setHelperText("Selecciona el tipo de petición");
 
-        TextField requestId = new TextField("Request id");
-        requestId.addThemeName("bordered");
-        inputs.add(comboBox, requestId);
-        Button boton1 = new Button("Lee caracter",
-                e -> {
-                    String tipo = comboBox.getValue();
-                    int id = Integer.parseInt(requestId.getValue());
-                    try {
-                        System.out.println(service.leePokemon(tipo,id));
-                    } catch (Exception ex) {
-                    }
-                });
-        boton1.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        boton1.addClickShortcut(Key.ENTER);
-        // Use custom CSS classes to apply styling. This is defined in shared-styles.css.
-        addClassName("centered-content");
+            Grid<Pokemon> grid = new Grid<>(Pokemon.class, true);
+            grid.addColumn(Pokemon::getName).setHeader("Nombre");
+            grid.addColumn(Pokemon::getAttack).setHeader("Ataque");
+            grid.addColumn(Pokemon::getDefense).setHeader("Defensa");
+            grid.addColumn(Pokemon::getTipo1).setHeader("Tipo1");
+            grid.addColumn(Pokemon::getSpeedDefense).setHeader("Tipo2");
 
-        add(inputs, boton1);
-    }
+
+        TextField datos = new TextField("Nombre/Tipo");
+        datos.addThemeName("bordered");
+        inputs.add(comboBox, datos);
+            Button boton1 = new Button("Lee caracter",
+                    e -> {
+                        String tipoPeticion = comboBox.getValue();
+                        String dato = datos.getValue();
+                        try {
+                            results.removeAll();
+                            if (tipoPeticion.equals("Por Nombre")){
+                                results.add(service.leePokemonPorNombre(dato));
+                            }
+                            else if (tipoPeticion.equals("Por tipo")){
+                                results.add(service.leePokemonPorTipo(dato));
+                            }
+                            else if (tipoPeticion.equals("Todos los pokemons")){
+                                grid.setItems(service.leePokemons());
+                                results.add(grid);
+                            }
+
+                        } catch (Exception ex) {
+                        }
+                    });
+
+            boton1.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            boton1.addClickShortcut(Key.ENTER);
+            // Use custom CSS classes to apply styling. This is defined in shared-styles.css.
+            addClassName("centered-content");
+
+            add(inputs, boton1, results);
+        }
 
 }
